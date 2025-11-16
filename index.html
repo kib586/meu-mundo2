@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Explorando Meu Mundo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #2d1b3d 50%, #3d1520 100%);
+            min-height: 100vh; overflow-x: hidden; color: #fff;
+        }
+
+        /* Tela de Solicitação de Acesso */
+        #access-request-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+        .access-card {
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 40px;
+            max-width: 500px; width:100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .access-card h1 {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; font-size: 2em; margin-bottom: 10px;
+        }
+        .access-card p { color: rgba(255,255,255,0.7); margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display:block; margin-bottom:8px; color: rgba(255,255,255,0.9); font-weight:500; }
+        .form-group input, .form-group textarea {
+            width:100%; padding:12px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+            border-radius:10px; color:#fff; font-size:16px; transition: all .3s;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline:none; border-color:#ff006e; background: rgba(255,255,255,0.15);
+        }
+        .form-group textarea { resize: vertical; min-height:100px; }
+        .btn-primary {
+            width:100%; padding:15px; background: linear-gradient(135deg,#ff006e,#8338ec);
+            border:none; border-radius:10px; color:#fff; font-size:16px; font-weight:600; cursor:pointer;
+            transition: transform .2s, box-shadow .2s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,0,110,0.4); }
+        .pending-message { text-align:center; color: rgba(255,255,255,0.7); }
+
+        /* Admin */
+        #admin-panel { display:none; padding:40px; max-width:1200px; margin:0 auto; }
+        #admin-login { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+        .admin-card {
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:40px; max-width:400px; width:100%;
+        }
+        .admin-section { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            border:1px solid rgba(255,255,255,0.1); border-radius:15px; padding:25px; margin-bottom:25px;
+        }
+        .admin-section h2 { margin-bottom:20px; color: #ff006e; }
+        .request-item { background: rgba(255,255,255,0.03); padding:15px; border-radius:10px; margin-bottom:15px; border-left:3px solid #8338ec; }
+        .request-item h4 { color:#fff; margin-bottom:5px; }
+        .request-item p { color: rgba(255,255,255,0.7); font-size:14px; margin-bottom:10px; }
+        .request-item .timestamp { font-size:12px; color: rgba(255,255,255,0.5); margin-bottom:10px; }
+        .request-actions { display:flex; gap:10px; }
+        .btn-approve { padding:8px 16px; background: linear-gradient(135deg,#06ffa5,#00d4ff); border:none; border-radius:8px; color:#000; font-weight:600; cursor:pointer; }
+        .btn-deny { padding:8px 16px; background: linear-gradient(135deg,#ff006e,#ff4d00); border:none; border-radius:8px; color:#fff; font-weight:600; cursor:pointer; }
+        .btn-logout { padding:10px 20px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:8px; color:#fff; cursor:pointer; }
+        .btn-approve:hover, .btn-deny:hover, .btn-logout:hover { transform: scale(1.03); }
+
+        /* Main */
+        #main-content { display:none; padding:20px; }
+        header { display:flex; justify-content:space-between; align-items:flex-start; padding:20px; flex-wrap:wrap; gap:20px; }
+        .title-section h1 {
+            font-size:2.5em; background: linear-gradient(135deg,#ff006e,#8338ec,#06ffa5);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:5px;
+        }
+        .title-section p { color: rgba(255,255,255,0.6); }
+
+        .tips-box { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:15px; padding:20px; min-width:250px; }
+        .tips-box h3 { color:#06ffa5; margin-bottom:15px; font-size:1.2em; }
+        .tips-box ul { list-style:none; }
+        .tips-box li { color: rgba(255,255,255,0.7); margin-bottom:8px; padding-left:20px; position:relative; }
+        .tips-box li::before { content: "•"; position:absolute; left:0; color:#ff006e; font-size:1.5em; }
+
+        /* MILES MORALES BODY - NOVO DESIGN */
+        .body-container { display:flex; justify-content:center; align-items:center; min-height:calc(100vh - 200px); padding:40px 20px; }
+        .miles-body { position:relative; width:280px; height:550px; }
+        .body-part { 
+            position:absolute; cursor:pointer; transition: all .3s ease; 
+            display:flex; align-items:center; justify-content:center; font-weight:600; 
+            color: rgba(255,255,255,0.9); text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .body-part:hover { 
+            transform: scale(1.1); filter: brightness(1.3); 
+            box-shadow: 0 0 25px currentColor;
+            z-index: 10;
+        }
+
+        /* Cabeça com máscara */
+        .head { 
+            top: 0; left: 50%; transform: translateX(-50%);
+            width: 100px; height: 100px; 
+            background: linear-gradient(135deg, #ff0000, #880000);
+            border-radius: 50% 50% 40% 40%;
+            border: 3px solid #000;
+        }
+        .head::before {
+            content: "🕷️";
+            font-size: 24px;
+            filter: brightness(0.8);
+        }
+
+        /* Olhos da máscara */
+        .eyes { 
+            top: 35px; left: 50%; transform: translateX(-50%);
+            width: 80px; height: 25px; 
+            display: flex; gap: 15px;
+            background: transparent;
+            border: none;
+        }
+        .eye { 
+            width: 30px; height: 25px; 
+            background: linear-gradient(135deg, #00ffea, #00aaff);
+            border-radius: 50% 50% 40% 40%;
+            border: 2px solid #000;
+            position: relative;
+            overflow: hidden;
+        }
+        .eye::after {
+            content: "";
+            position: absolute;
+            top: 5px; left: 5px;
+            width: 12px; height: 12px;
+            background: #000;
+            border-radius: 50%;
+        }
+
+        /* Torso - traje do Miles */
+        .torso {
+            top: 95px; left: 50%; transform: translateX(-50%);
+            width: 120px; height: 150px;
+            background: linear-gradient(135deg, #ff0000, #880000, #000);
+            border-radius: 40% 40% 30% 30%;
+            border: 3px solid #000;
+        }
+        .torso::before {
+            content: "🕷️";
+            position: absolute;
+            top: 20px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            opacity: 0.8;
+        }
+
+        /* Coração no peito */
+        .heart { 
+            top: 130px; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 40px; 
+            background: linear-gradient(135deg, #ff006e, #ff4d00);
+            border-radius: 50%;
+            border: 2px solid #fff;
+            animation: heartbeat 1.5s ease-in-out infinite;
+            z-index: 5;
+        }
+        @keyframes heartbeat { 
+            0%,100% { transform: translateX(-50%) scale(1); } 
+            50% { transform: translateX(-50%) scale(1.1); } 
+        }
+
+        /* Braços */
+        .arms { 
+            top: 110px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 140px;
+            width: 200px; height: 120px;
+            background: transparent;
+            border: none;
+        }
+        .arm { 
+            width: 40px; height: 120px;
+            background: linear-gradient(135deg, #ff0000, #880000, #000);
+            border-radius: 20px;
+            border: 2px solid #000;
+        }
+
+        /* Mãos */
+        .hands { 
+            top: 220px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 140px;
+            width: 200px; height: 40px;
+            background: transparent;
+            border: none;
+        }
+        .hand { 
+            width: 35px; height: 35px;
+            background: linear-gradient(135deg, #333, #000);
+            border-radius: 50%;
+            border: 2px solid #000;
+        }
+
+        /* Pernas */
+        .legs { 
+            top: 240px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 60px;
+            width: 140px; height: 180px;
+            background: transparent;
+            border: none;
+        }
+        .leg { 
+            width: 45px; height: 180px;
+            background: linear-gradient(135deg, #ff0000, #880000, #000);
+            border-radius: 20px 20px 30px 30px;
+            border: 2px solid #000;
+        }
+
+        /* Pés */
+        .feet { 
+            top: 410px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 60px;
+            width: 140px; height: 40px;
+            background: transparent;
+            border: none;
+        }
+        .foot { 
+            width: 50px; height: 25px;
+            background: linear-gradient(135deg, #333, #000);
+            border-radius: 10px 10px 20px 20px;
+            border: 2px solid #000;
+        }
+
+        /* Modal */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+        .modal.active { display:flex; }
+        .modal-content { background: rgba(20,20,20,0.95); border:2px solid rgba(255,255,255,0.2); border-radius:20px; padding:40px; max-width:600px; width:100%; position:relative; animation: modalSlideIn .3s ease; }
+        @keyframes modalSlideIn { from { opacity:0; transform: translateY(-50px); } to { opacity:1; transform: translateY(0); } }
+        .modal-close { position:absolute; top:15px; right:15px; background: rgba(255,255,255,0.1); border:none; width:40px; height:40px; border-radius:50%; color:#fff; font-size:24px; cursor:pointer; transition:all .3s; }
+        .modal-close:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
+        .modal-title { font-size:2em; margin-bottom:20px; background: linear-gradient(135deg,#ff006e,#8338ec); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .modal-text { color: rgba(255,255,255,0.9); line-height:1.6; font-size:1.1em; }
+
+        /* KIB - O PET FLUTUANTE */
+        .kib-container { 
+            position: fixed; 
+            bottom: 100px; 
+            right: 30px; 
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .kib {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #ff0000, #880000, #000);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 10px 40px rgba(255, 0, 0, 0.4);
+            cursor: pointer;
+            border: 2px solid #fff;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        .kib::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            width: 20px;
+            height: 15px;
+            background: linear-gradient(135deg, #00ffea, #00aaff);
+            border-radius: 50% 50% 40% 40%;
+            border: 1px solid #000;
+        }
+
+        .kib::after {
+            content: "";
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 20px;
+            height: 15px;
+            background: linear-gradient(135deg, #00ffea, #00aaff);
+            border-radius: 50% 50% 40% 40%;
+            border: 1px solid #000;
+        }
+
+        .kib-speech {
+            display: none;
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            color: #000;
+            padding: 15px 20px;
+            border-radius: 15px;
+            max-width: 250px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            font-size: 14px;
+            border: 2px solid #ff0000;
+        }
+
+        .kib-speech.active { display: block; }
+
+        .kib.shy { animation: bounce 0.5s ease; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.1); }
+        }
+
+        .chat-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #ff0000, #880000);
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 0, 0, 0.4);
+            transition: all 0.3s;
+        }
+
+        .chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 0, 0, 0.6);
+        }
+
+        /* Chat window */
+        .chat-window {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 400px;
+            height: 500px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 2px solid rgba(255, 0, 0, 0.3);
+            border-radius: 20px;
+            z-index: 1000;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .chat-window.active { display: flex; }
+
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #ff0000, #880000);
+            border-radius: 18px 18px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 { font-size: 1.2em; }
+
+        .chat-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #ff0000, #880000);
+            color: #fff;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #ff0000;
+        }
+
+        .chat-send {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #ff0000, #880000);
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .loading {
+            display: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+
+        .loading.active { display: block; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header { flex-direction: column; align-items: center; text-align: center; }
+            .title-section h1 { font-size: 1.8em; }
+            .miles-body { transform: scale(0.8); }
+            .chat-window { width: calc(100% - 40px); right: 20px; left: 20px; }
+            .kib-container { right: 20px; bottom: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de Solicitação de Acesso -->
+    <div id="access-request-screen">
+        <div class="access-card">
+            <h1>Bem-vindo(a)!</h1>
+            <p id="access-description">Para acessar este espaço íntimo, preciso saber quem você é.</p>
+
+            <div id="request-form">
+                <div class="form-group">
+                    <label for="visitor-name">Seu Nome</label>
+                    <input type="text" id="visitor-name" placeholder="Digite seu nome">
+                </div>
+                <div class="form-group">
+                    <label for="visitor-message">Quem é você?</label>
+                    <textarea id="visitor-message" placeholder="Conte um pouco sobre você e por que quer acessar..."></textarea>
+                </div>
+                <button class="btn-primary" onclick="submitAccessRequest()">Solicitar Acesso</button>
+            </div>
+
+            <div id="pending-status" style="display: none;">
+                <div class="pending-message">
+                    <h2>⏳ Solicitação Pendente</h2>
+                    <p>Sua solicitação está sendo analisada. Aguarde a aprovação!</p>
+                </div>
+            </div>
+
+            <div id="denied-status" style="display: none;">
+                <div class="pending-message">
+                    <h2>❌ Acesso Negado</h2>
+                    <p>Desculpe, sua solicitação foi negada.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin login -->
+    <div id="admin-login">
+        <div class="admin-card">
+            <h1 style="margin-bottom:20px; background: linear-gradient(135deg,#ff006e,#8338ec); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Painel Admin</h1>
+            <div class="form-group">
+                <label for="admin-password">Senha</label>
+                <input type="password" id="admin-password" placeholder="Digite a senha">
+            </div>
+            <button class="btn-primary" onclick="adminLogin()">Entrar</button>
+        </div>
+    </div>
+
+    <!-- Admin panel -->
+    <div id="admin-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <h1 style="background: linear-gradient(135deg,#ff006e,#8338ec); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Painel Admin</h1>
+            <button class="btn-logout" onclick="adminLogout()">Sair</button>
+        </div>
+
+        <div class="admin-section">
+            <h2>🔒 Trocar Senha</h2>
+            <div class="form-group">
+                <label>Nova Senha</label>
+                <input type="password" id="new-password" placeholder="Digite a nova senha">
+            </div>
+            <button class="btn-primary" onclick="changePassword()">Alterar Senha</button>
+        </div>
+
+        <div class="admin-section">
+            <h2>📋 Solicitações Pendentes</h2>
+            <div id="pending-requests"></div>
+        </div>
+
+        <div class="admin-section">
+            <h2>📊 Histórico de Aprovações/Negações</h2>
+            <div id="history-list"></div>
+        </div>
+
+        <div class="admin-section">
+            <h2>❓ Perguntas Não Respondidas pelo Kib</h2>
+            <div id="unanswered-questions"></div>
+        </div>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div id="main-content">
+        <header>
+            <div class="title-section">
+                <h1>Explorando Meu Mundo</h1>
+                <p>Clique em qualquer parte do corpo para descobrir mais</p>
+            </div>
+            <div class="tips-box">
+                <h3>💡 Dicas</h3>
+                <ul>
+                    <li>Clique nas partes do corpo</li>
+                    <li>Converse com o Kib</li>
+                    <li>Explore e descubra mais</li>
+                </ul>
+            </div>
+        </header>
+
+        <div class="body-container">
+            <div class="miles-body">
+                <!-- Cabeça do Miles Morales -->
+                <div class="body-part head" onclick="showBodyInfo('head')" title="Cabeça"></div>
+                
+                <!-- Olhos da máscara -->
+                <div class="body-part eyes">
+                    <div class="eye" onclick="showBodyInfo('eyes')" title="Olhos"></div>
+                    <div class="eye" onclick="showBodyInfo('eyes')" title="Olhos"></div>
+                </div>
+                
+                <!-- Torso -->
+                <div class="body-part torso" onclick="showBodyInfo('torso')" title="Torso"></div>
+                
+                <!-- Coração -->
+                <div class="body-part heart" onclick="showBodyInfo('heart')" title="Coração">❤️</div>
+                
+                <!-- Braços -->
+                <div class="body-part arms">
+                    <div class="arm" onclick="showBodyInfo('arms')" title="Braços"></div>
+                    <div class="arm" onclick="showBodyInfo('arms')" title="Braços"></div>
+                </div>
+                
+                <!-- Mãos -->
+                <div class="body-part hands">
+                    <div class="hand" onclick="showBodyInfo('hands')" title="Mãos"></div>
+                    <div class="hand" onclick="showBodyInfo('hands')" title="Mãos"></div>
+                </div>
+                
+                <!-- Pernas -->
+                <div class="body-part legs">
+                    <div class="leg" onclick="showBodyInfo('legs')" title="Pernas"></div>
+                    <div class="leg" onclick="showBodyInfo('legs')" title="Pernas"></div>
+                </div>
+                
+                <!-- Pés -->
+                <div class="body-part feet">
+                    <div class="foot" onclick="showBodyInfo('feet')" title="Pés"></div>
+                    <div class="foot" onclick="showBodyInfo('feet')" title="Pés"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kib - O Pet Flutuante -->
+        <div class="kib-container">
+            <div class="kib" id="kib" onclick="toggleChat()">
+                <!-- Olhos são criados via CSS pseudo-elementos -->
+            </div>
+            <div class="kib-speech" id="kib-speech"></div>
+            <button class="chat-btn" onclick="toggleChat()">💬 Falar com Kib</button>
+        </div>
+
+        <!-- Chat window -->
+        <div class="chat-window" id="chat-window">
+            <div class="chat-header">
+                <h3>Converse com o Kib</h3>
+                <button class="chat-close" onclick="toggleChat()">×</button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot">E aí! Sou o Kib, a versão mini do Miles. Pode me perguntar qualquer coisa sobre ele! 🕷️</div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Digite sua mensagem..." onkeydown="handleChatKeypress(event)">
+                <button class="chat-send" onclick="sendMessage()">Enviar</button>
+            </div>
+            <div class="loading" id="chat-loading">Pensando...</div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h2 class="modal-title" id="modal-title"></h2>
+            <p class="modal-text" id="modal-text"></p>
+        </div>
+    </div>
+
+    <script>
+    // ========== DADOS ATUALIZADOS ==========
+    const bodyParts = {
+        head: {
+            title: '🕷️ Minha Cabeça',
+            text: 'Aqui ficam todos os meus pensamentos sobre você... E também sobre como salvar a cidade como o Homem-Aranha! 🕸️',
+            makeShy: true
+        },
+        heart: {
+            title: '❤️ Meu Coração',
+            text: '100% você. Não tem como negar, meu coração bate diferente quando penso em você. Cada batida carrega seu nome e a esperança de que um dia possamos ser mais que amigos.',
+            makeShy: true
+        },
+        eyes: {
+            title: '👁️ Meus Olhos',
+            text: 'Através desta máscara, enxergo um mundo que precisa de ajuda... Mas quando te vejo, enxergo também um motivo especial para continuar lutando.'
+        },
+        torso: {
+            title: '🕷️ Meu Torso',
+            text: 'Protegido por este traje, carrego não só a responsabilidade de ser herói, mas também o desejo de te proteger e fazer você feliz.'
+        },
+        arms: {
+            title: '💪 Meus Braços',
+            text: 'Fortes o suficiente para balançar entre arranha-céus, mas tremem quando estou perto de você. Esses braços querem te abraçar mas ainda não sabem como.'
+        },
+        hands: {
+            title: '🤲 Minhas Mãos',
+            text: 'Com estas mãos eu crio teias para salvar pessoas, mas também gostaria de segurar suas mãos e sentir que posso ser eu mesmo, sem máscaras.'
+        },
+        legs: {
+            title: '🦵 Minhas Pernas',
+            text: 'Me levam para onde o dever chama, mas meus passos ficam mais leves quando sei que vou te encontrar. Corro mais rápido pensando em você.'
+        },
+        feet: {
+            title: '👣 Meus Pés',
+            text: 'Me mantém firme nas lutas contra vilões, mas ficam desajeitados quando você está por perto. Parece que perco todo o equilíbrio que tenho como Homem-Aranha.'
+        }
+    };
+
+    // ========== INFORMAÇÕES PESSOAIS DO KIB ==========
+    const userInfo = {
+        personalidade: "sou meio calmo, gosto de ficar muito na minha, não sou muito interativo",
+        sentimentos: "acho que estou apaixonado, mas tenho medo de ser algo de momento",
+        sobreEla: "considero ela muito linda, sinceramente ela deve parar de me mandar aquele olhar dela aquilo me desconcentra",
+        amigos: "tenho poucos amigos uns 4, e algumas amigas umas 3 eu acho",
+        metas: "me aproximar de DEUS, acabar o meu curso, ter uma Urus na garagem e arrancar um sorriso dela cada vez que ela me ver"
+    };
+
+    // ========== UTILITÁRIOS / USUÁRIO ==========
+    function generateUserId() {
+        return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    function getUserId() {
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+            userId = generateUserId();
+            localStorage.setItem('userId', userId);
+        }
+        return userId;
+    }
+
+    function isUserApproved() {
+        const userId = getUserId();
+        const approvedUsers = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+        return approvedUsers.includes(userId);
+    }
+
+    function getUserRequest() {
+        const userId = getUserId();
+        const requests = JSON.parse(localStorage.getItem('accessRequests') || '[]');
+        return requests.find(r => r.id === userId);
+    }
+
+    function submitAccessRequest() {
+        const nameEl = document.getElementById('visitor-name');
+        const messageEl = document.getElementById('visitor-message');
+        const name = nameEl.value.trim();
+        const message = messageEl.value.trim();
+
+        if (!name || !message) {
+            alert('Por favor, preencha todos os campos!');
+            return;
+        }
+
+        const userId = getUserId();
+        const requests = JSON.parse(localStorage.getItem('accessRequests') || '[]');
+
+        // Se já existe pedido do mesmo user, atualiza-o, senão adiciona
+        const existingIndex = requests.findIndex(r => r.id === userId);
+        if (existingIndex >= 0) {
+            requests[existingIndex] = {
+                ...requests[existingIndex],
+                name,
+                message,
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            };
+        } else {
+            requests.push({
+                id: userId,
+                name,
+                message,
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            });
+        }
+
+        localStorage.setItem('accessRequests', JSON.stringify(requests));
+        // limpar inputs
+        nameEl.value = '';
+        messageEl.value = '';
+        checkAccess();
+        alert('Solicitação enviada com sucesso!');
+    }
+
+    // ========== ADMIN ==========
+    function adminLogin() {
+        const password = document.getElementById('admin-password').value;
+        const savedPassword = localStorage.getItem('adminPassword') || '234';
+
+        if (password === savedPassword) {
+            document.getElementById('admin-login').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            loadAdminData();
+            document.getElementById('admin-password').value = '';
+        } else {
+            alert('Senha incorreta!');
+        }
+    }
+
+    function adminLogout() {
+        document.getElementById('admin-login').style.display = 'flex';
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('admin-password').value = '';
+    }
+
+    function changePassword() {
+        const newPassword = document.getElementById('new-password').value.trim();
+        if (!newPassword) { alert('Digite uma nova senha!'); return; }
+        if (newPassword.length < 3) { alert('A senha deve ter pelo menos 3 caracteres!'); return; }
+        localStorage.setItem('adminPassword', newPassword);
+        document.getElementById('new-password').value = '';
+        alert('Senha alterada com sucesso!');
+    }
+
+    function loadAdminData() {
+        loadPendingRequests();
+        loadHistory();
+        loadUnansweredQuestions();
+    }
+
+    function loadPendingRequests() {
+        const requests = JSON.parse(localStorage.getItem('accessRequests') || '[]');
+        const pending = requests.filter(r => r.status === 'pending');
+        const container = document.getElementById('pending-requests');
+
+        if (pending.length === 0) {
+            container.innerHTML = '<p style="color: rgba(255,255,255,0.5);">Nenhuma solicitação pendente.</p>';
+            return;
+        }
+
+        container.innerHTML = pending.map(r => `
+            <div class="request-item">
+                <h4>${escapeHtml(r.name)}</h4>
+                <p>${escapeHtml(r.message)}</p>
+                <div class="timestamp">${new Date(r.timestamp).toLocaleString('pt-BR')}</div>
+                <div class="request-actions">
+                    <button class="btn-approve" onclick="approveRequest('${r.id}')">✅ Aprovar</button>
+                    <button class="btn-deny" onclick="denyRequest('${r.id}')">❌ Negar</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function approveRequest(userId) {
+        const requests = JSON.parse(localStorage.getItem('accessRequests') || '[]');
+        const request = requests.find(r => r.id === userId);
+
+        if (request) {
+            request.status = 'approved';
+            localStorage.setItem('accessRequests', JSON.stringify(requests));
+
+            const approvedUsers = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            if (!approvedUsers.includes(userId)) {
+                approvedUsers.push(userId);
+                localStorage.setItem('approvedUsers', JSON.stringify(approvedUsers));
+            }
+
+            loadAdminData();
+            alert('Usuário aprovado!');
+        }
+    }
+
+    function denyRequest(userId) {
+        const requests = JSON.parse(localStorage.getItem('accessRequests') || '[]');
+        const request = requests.find(r => r.id === userId);
+
+        if (request) {
+            request.status = 'denied';
+            localStorage.setItem('accessRequests', JSON.stringify(requests));
+            loadAdminData();
+            alert('Usuário negado!');
+        }
+    }
+
+    function loadHistory() {
+        const requests = JSON.parse(localStorage.getItem('accessRequests') || '[]');
+        const history = requests.filter(r => r.status !== 'pending');
+        const container = document.getElementById('history-list');
+
+        if (history.length === 0) {
+            container.innerHTML = '<p style="color: rgba(255,255,255,0.5);">Nenhum histórico ainda.</p>';
+            return;
+        }
+
+        container.innerHTML = history.map(r => `
+            <div class="request-item" style="border-left-color: ${r.status === 'approved' ? '#06ffa5' : '#ff006e'}">
+                <h4>${escapeHtml(r.name)} - ${r.status === 'approved' ? '✅ Aprovado' : '❌ Negado'}</h4>
+                <p>${escapeHtml(r.message)}</p>
+                <div class="timestamp">${new Date(r.timestamp).toLocaleString('pt-BR')}</div>
+            </div>
+        `).join('');
+    }
+
+    function loadUnansweredQuestions() {
+        const questions = JSON.parse(localStorage.getItem('unansweredQuestions') || '[]');
+        const container = document.getElementById('unanswered-questions');
+
+        if (questions.length === 0) {
+            container.innerHTML = '<p style="color: rgba(255,255,255,0.5);">Nenhuma pergunta não respondida.</p>';
+            return;
+        }
+
+        container.innerHTML = questions.map(q => `
+            <div class="request-item">
+                <p><strong>Pergunta:</strong> ${escapeHtml(q.question)}</p>
+                <div class="timestamp">${new Date(q.timestamp).toLocaleString('pt-BR')}</div>
+            </div>
+        `).join('');
+    }
+
+    // ========== CONTROLE DE ACESSO ==========
+    function checkAccess() {
+        const isAdmin = window.location.hash === '#admin';
+
+        if (isAdmin) {
+            document.getElementById('access-request-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('admin-login').style.display = 'flex';
+            return;
+        }
+
+        if (isUserApproved()) {
+            document.getElementById('access-request-screen').style.display = 'none';
+            document.getElementById('admin-login').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        } else {
+            const request = getUserRequest();
+
+            if (!request) {
+                document.getElementById('request-form').style.display = 'block';
+                document.getElementById('pending-status').style.display = 'none';
+                document.getElementById('denied-status').style.display = 'none';
+            } else if (request.status === 'pending') {
+                document.getElementById('request-form').style.display = 'none';
+                document.getElementById('pending-status').style.display = 'block';
+                document.getElementById('denied-status').style.display = 'none';
+            } else if (request.status === 'denied') {
+                document.getElementById('request-form').style.display = 'none';
+                document.getElementById('pending-status').style.display = 'none';
+                document.getElementById('denied-status').style.display = 'block';
+            }
+
+            document.getElementById('access-request-screen').style.display = 'flex';
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('admin-login').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'none';
+        }
+    }
+
+    // ========== CORPO & MODAL ==========
+    function showBodyInfo(part) {
+        const info = bodyParts[part];
+        if (!info) return;
+        document.getElementById('modal-title').textContent = info.title;
+        document.getElementById('modal-text').textContent = info.text;
+        document.getElementById('modal').classList.add('active');
+
+        if (info.makeShy) makeKibShy();
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('active');
+    }
+
+    // ========== KIB ==========
+    function makeKibShy() {
+        const kib = document.getElementById('kib');
+        const speech = document.getElementById('kib-speech');
+
+        kib.classList.add('shy');
+
+        speech.textContent = 'Ei, essa é uma parte bem pessoal dele... 🕷️😳';
+        speech.classList.add('active');
+
+        setTimeout(() => kib.classList.remove('shy'), 500);
+        setTimeout(() => { speech.classList.remove('active'); }, 3000);
+    }
+
+    function toggleChat() {
+        const chatWindow = document.getElementById('chat-window');
+        chatWindow.classList.toggle('active');
+    }
+
+    function handleChatKeypress(event) {
+        // Envia com Enter
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    }
+
+    // ========== CHAT INTELIGENTE DO KIB ==========
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (!message) return;
+
+        const messagesContainer = document.getElementById('chat-messages');
+
+        // adicionar mensagem do usuário
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message user';
+        userMessage.textContent = message;
+        messagesContainer.appendChild(userMessage);
+        scrollChatToBottom();
+
+        input.value = '';
+
+        // loading
+        const loadingEl = document.getElementById('chat-loading');
+        loadingEl.classList.add('active');
+
+        let botResponseText = '';
+
+        try {
+            // Resposta inteligente baseada nas informações pessoais
+            botResponseText = getKibResponse(message);
+        } catch (err) {
+            console.error('Erro no Kib:', err);
+            botResponseText = 'Ops! Deu um bug aqui... 🐛 Tenta de novo!';
+        }
+
+        // Se a resposta sugerir "perguntar diretamente", salva como não respondida
+        if (botResponseText.includes('Acho melhor você perguntar isso diretamente a ele')) {
+            const questions = JSON.parse(localStorage.getItem('unansweredQuestions') || '[]');
+            questions.push({ question: message, timestamp: new Date().toISOString(), userId: getUserId() });
+            localStorage.setItem('unansweredQuestions', JSON.stringify(questions));
+        }
+
+        // adicionar resposta do kib
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        botMessage.textContent = botResponseText;
+        messagesContainer.appendChild(botMessage);
+        scrollChatToBottom();
+
+        loadingEl.classList.remove('active');
+    }
+
+    function getKibResponse(message) {
+        const m = message.toLowerCase();
+        
+        // Saudação
+        if (m.includes('oi') || m.includes('olá') || m.includes('ola') || m.includes('eae') || m.includes('hey')) {
+            return 'E aí! 🕷️ Sou o Kib, a versão mini do Miles. Tudo bem? Pode me perguntar qualquer coisa sobre ele!';
+        }
+
+        // Personalidade
+        if (m.includes('calmo') || m.includes('na sua') || m.includes('tímido') || m.includes('timido') || m.includes('reservado')) {
+            return 'Ele é bem na dele mesmo! Gosta de ficar na tranquilidade, não é muito de agitação. Mas quando confia em alguém, abre o coração. 😊';
+        }
+
+        // Sentimentos/Paixão
+        if (m.includes('apaixonado') || m.includes('gosta') || m.includes('sentimento') || m.includes('paixão') || m.includes('paixao')) {
+            if (m.includes('medo') || m.includes('momento') || m.includes('dúvida') || m.includes('duvida')) {
+                return 'Ele tá com medo de ser algo passageiro mesmo... Mas quando ela dá aquele olhar, parece que o mundo para, sabe? 🥺 Acho melhor você perguntar isso diretamente a ele.';
+            }
+            return 'Ele tá descobrindo uns sentimentos novos... É uma mistura de medo e esperança. Bem complicado isso do coração! 💘';
+        }
+
+        // Sobre ela
+        if (m.includes('ela') || m.includes('menina') || m.includes('garota') || m.includes('linda') || m.includes('olhar')) {
+            return 'Ah, essa menina... Ela mexe com ele de um jeito diferente! Aquele olhar dela deixa ele todo desconcentrado. É fofo de ver! 😳';
+        }
+
+        // Amigos
+        if (m.includes('amigo') || m.includes('amiga') || m.includes('amizade') || m.includes('poucos')) {
+            return 'Ele tem um grupinho pequeno mesmo - uns 4 amigos e 3 amigas. Prefere qualidade à quantidade, você me entende! 👥';
+        }
+
+        // Metas
+        if (m.includes('deus') || m.includes('curso') || m.includes('urus') || m.includes('carro') || m.includes('sorriso') || m.includes('meta')) {
+            if (m.includes('deus')) {
+                return 'A fé é muito importante pra ele! Está buscando se aproximar mais de Deus. 🙏';
+            }
+            if (m.includes('curso')) {
+                return 'Focado em terminar o curso! Ele é bem determinado quando coloca uma meta na cabeça. 💪';
+            }
+            if (m.includes('urus')) {
+                return 'Sonho dele é ter uma Urus na garagem! Todo mundo tem seus sonhos materiais, né? 🚗';
+            }
+            if (m.includes('sorriso')) {
+                return 'Esse é o sonho mais bonito: ver ela sorrir cada vez que o vê. Coisa de romance mesmo! 💖';
+            }
+            return 'Ele tem metas bem definidas: crescimento espiritual, profissional, um sonho de carro e... bem, fazer aquela pessoa especial feliz! ✨';
+        }
+
+        // Vida amorosa/relacionamento
+        if (m.includes('namoro') || m.includes('relacionamento') || m.includes('beijo') || m.includes('romance')) {
+            return 'Hmm... isso é bem pessoal. Acho melhor você perguntar isso diretamente a ele 😊';
+        }
+
+        // Futuro/planos
+        if (m.includes('futuro') || m.includes('plano') || m.includes('sonho') || m.includes('vida')) {
+            return 'Ele tá construindo o futuro dele passo a passo! Com fé, estudo e uns sonhos no coração... 🎯';
+        }
+
+        // Despedida
+        if (m.includes('tchau') || m.includes('bye') || m.includes('flw') || m.includes('até') || m.includes('ate')) {
+            return 'Falou! 🕷️ Qualquer coisa é só chamar!';
+        }
+
+        // Perguntas diretas
+        if (m.includes('?') && (m.includes('porque') || m.includes('por que') || m.includes('como') || m.includes('quando'))) {
+            return 'Hmm, boa pergunta! Mas algumas coisas são melhor conversadas pessoalmente. Acho melhor você perguntar isso diretamente a ele 😊';
+        }
+
+        // Resposta padrão - análise de palavras-chave
+        const words = m.split(' ');
+        const keyResponses = {
+            'triste': 'Fica triste não! Tudo passa, até a tristeza. 🌈',
+            'feliz': 'Que bom! A felicidade dele contagia até mim! 😄',
+            'medo': 'Medo é normal, faz parte. O importante é não deixar ele te parar! 💪',
+            'nervoso': 'Respira fundo! Às vezes a calma é a melhor resposta. 🧘',
+            'dúvida': 'Dúvidas todo mundo tem! O importante é buscar respostas. 🔍',
+            'deus': 'A fé dele é uma força muito grande! 🙏',
+            'familia': 'A família é importante pra ele, mesmo sendo reservado. 👨‍👩‍👦',
+            'música': 'Ele adora música! É o jeito dele de relaxar. 🎵',
+            'filme': 'Curtir um bom filme é um dos passatempos favoritos dele! 🎬',
+            'heroi': 'Bem, ele se inspira no Homem-Aranha, né? 🕷️😂'
+        };
+
+        for (const word of words) {
+            if (keyResponses[word]) {
+                return keyResponses[word];
+            }
+        }
+
+        // Resposta genérica mas personalizada
+        const genericResponses = [
+            'Interessante! Ele é uma pessoa bem complexa, cheia de camadas... 🧅',
+            'Hmm, entendi! Ele tá sempre refletindo sobre essas coisas. 🤔',
+            'Legal que você pergunta isso! É um tema que mexe com ele. 💭',
+            'Essa questão é importante mesmo! Ele pensa bastante nisso. 🎯',
+            'Todo mundo tem seus mistérios, né? Ele também! 🔮'
+        ];
+
+        return genericResponses[Math.floor(Math.random() * genericResponses.length)];
+    }
+
+    function scrollChatToBottom() {
+        const messagesContainer = document.getElementById('chat-messages');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // ========== INICIALIZAÇÃO ==========
+    window.addEventListener('hashchange', checkAccess);
+    window.addEventListener('load', () => {
+        if (!localStorage.getItem('adminPassword')) {
+            localStorage.setItem('adminPassword', '234');
+        }
+        checkAccess();
+    });
+
+    // fechar modal ao clicar fora
+    document.getElementById('modal').addEventListener('click', (e) => {
+        if (e.target.id === 'modal') closeModal();
+    });
+
+    // função de escape simples para evitar injeção ao inserir HTML
+    function escapeHtml(text) {
+        if (!text && text !== 0) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+    </script>
+</body>
+</html>
